@@ -55,7 +55,7 @@ func TestSend_WithMessage(t *testing.T) {
 		Message: Message{
 			Token: "test",
 			Notification: Notification{
-				Title: "New iLunge Version Coming Soon!",
+				Title: "Coming Soon!",
 				Body:  "Stay tuned for the latest features and improvements. We are constantly working to improve your experience.",
 			},
 			Data: map[string]string{
@@ -68,7 +68,7 @@ func TestSend_WithMessage(t *testing.T) {
 				Payload: APNSPayload{
 					Aps: APNS{
 						Alert: APNAlert{
-							Title:    "New iLunge Version Coming Soon!",
+							Title:    "Coming Soon!",
 							Subtitle: "This is a subtitle",
 							Body:     "Stay tuned for the latest features and improvements. We are constantly working to improve your experience.",
 						},
