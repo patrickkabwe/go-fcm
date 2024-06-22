@@ -13,14 +13,10 @@ func TestGenerateGoogleJWT(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-
-	// Validate Private Key
 	err = privateKey.Validate()
 	if err != nil {
 		t.Error("Expected no error")
 	}
-
-	// Encode private key to PKCS#1 ASN.1 PEM.
 	keyPEM := pem.EncodeToMemory(
 		&pem.Block{
 			Type:  "PRIVATE KEY",
