@@ -72,11 +72,18 @@ func (f *FCMClient) SendToCondition(msg *MessagePayload) error {
 
 // SendToMultiple sends a message payload to multiple FCM tokens.
 // It returns an error if no tokens are provided or if there is an issue making the API call.
-func (f *FCMClient) SendToMultiple(msg MessagePayload) error {
+func (f *FCMClient) SendToMultiple(msg *MessagePayload) error {
 	if len(msg.Message.Tokens) == 0 {
 		return fmt.Errorf("no tokens provided")
 	}
-	return f.makeAPICall(&msg)
+	return f.makeAPICall(msg)
+}
+
+// SendAll sends a message payload to all the provided tokens.
+// It returns an error if no tokens are provided or if there is an issue making the API call.
+// Create a list containing up to 500 messages.
+func (f *FCMClient) SendAll(msg *MessagePayload) error {
+	return f.makeAPICall(msg)
 }
 
 // WithCredentialFile sets the service account credentials for the FCM client
