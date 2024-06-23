@@ -4,9 +4,9 @@ This library provides a simple interface to interact with Firebase Cloud Messagi
 
 ## Features
 
-📲 Send messages to devices using FCM.
-📢 Send messages to topics.
-🔑 Set service account credentials.
+📲 Send messages to devices using FCM.<br>
+📢 Send messages to topics.<br>
+🔑 Set service account credentials.<br>
 🔧 Customize HTTP client for requests.
 
 ## Installation
