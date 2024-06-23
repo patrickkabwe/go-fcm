@@ -22,22 +22,6 @@
 // 		Data: map[string]string{
 // 			"key": "value",
 // 		},
-// 		APNS: APNSConfig{
-// 			Headers: map[string]string{
-// 				"apns-priority": "10",
-// 			},
-// 			Payload: APNSPayload{
-// 				Aps: APNS{
-// 					Alert: APNAlert{
-// 						Title:    "Coming Soon!",
-// 						Subtitle: "This is a subtitle",
-// 						Body:     "Stay tuned for the latest features and improvements. We are constantly working to improve your experience.",
-// 					},
-// 					Badge: 1,
-// 					Sound: "default",
-// 				},
-// 			},
-// 		},
 // 	},
 // })
 
