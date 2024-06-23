@@ -1,9 +1,27 @@
+version: 2
+
+env:
+  - GO111MODULE=on
+
 builds:
   - skip: true
 
 changelog:
+  sort: asc
   use: github
+  filters:
+    exclude:
+      - "^test:"
+      - "^test\\("
+      - "merge conflict"
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+      - go mod tidy
   groups:
+    - title: Dependency updates
+      regexp: '^.*?(.+)\(deps\)!?:.+$'
+      order: 3
     - title: Features
       regexp: "^.*feat[(\\w)]*:+.*$"
       order: 0
