@@ -57,9 +57,13 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-              
+
       - name: Run Tests
         run: |
+          echo "Folder: $PWD"
+          echo "Go version: $(go version)"
+          echo "Repository Folder: $GITHUB_WORKSPACE"
+          
           make test
 
       - name: Upload coverage to Codecov
