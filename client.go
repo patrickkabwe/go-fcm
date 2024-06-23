@@ -60,10 +60,12 @@ func (f *FCMClient) SendToTopic(msg *MessagePayload) error {
 	return f.makeAPICall(msg)
 }
 
-// SendToCondition sends a message to devices that match the given condition.
-func (f *FCMClient) SendToCondition() {
-	panic("implement me")
-}
+// SendToCondition sends a message payload to a specific condition.
+// It returns an error if the condition is empty or if there is an error making the API call.
+func (f *FCMClient) SendToCondition(msg *MessagePayload) error {
+	if msg.Message.Condition == "" {
+		return fmt.Errorf("condition is required")
+	}
 
 // SendToMultiple sends a message to multiple devices using the FCM (Firebase Cloud Messaging) service.
 func (f *FCMClient) SendToMultiple() {
