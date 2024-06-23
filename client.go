@@ -67,9 +67,16 @@ func (f *FCMClient) SendToCondition(msg *MessagePayload) error {
 		return fmt.Errorf("condition is required")
 	}
 
-// SendToMultiple sends a message to multiple devices using the FCM (Firebase Cloud Messaging) service.
-func (f *FCMClient) SendToMultiple() {
-	panic("implement me")
+	return f.makeAPICall(msg)
+}
+
+// SendToMultiple sends a message payload to multiple FCM tokens.
+// It returns an error if no tokens are provided or if there is an issue making the API call.
+func (f *FCMClient) SendToMultiple(msg MessagePayload) error {
+	if len(msg.Message.Tokens) == 0 {
+		return fmt.Errorf("no tokens provided")
+	}
+	return f.makeAPICall(&msg)
 }
 
 // WithCredentialFile sets the service account credentials for the FCM client
