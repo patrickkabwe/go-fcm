@@ -70,6 +70,7 @@ type APNSConfig struct {
 
 type Message struct {
 	Token        string            `json:"token,omitempty"`
+	Tokens       []string          `json:"tokens,omitempty"`
 	Topic        string            `json:"topic,omitempty"`
 	Notification Notification      `json:"notification,omitempty"`
 	Data         map[string]string `json:"data,omitempty"`
