@@ -37,18 +37,12 @@ type FCMClient struct {
 }
 
 func NewClient() *FCMClient {
-	client := &FCMClient{}
-
-	if client.httpClient == nil {
-		client.httpClient = http.DefaultClient
-	}
-
-	return client
+	return &FCMClient{httpClient: http.DefaultClient}
 }
 
 func (f *FCMClient) Send(msg *MessagePayload) error {
 
-	err := f.makeAPIRequest(msg)
+	err := f.makeAPICall(msg)
 
 	if err != nil {
 		return err
@@ -57,8 +51,18 @@ func (f *FCMClient) Send(msg *MessagePayload) error {
 	return nil
 }
 
-func (f *FCMClient) SendToTopic() {
-	panic("implement me")
+func (f *FCMClient) SendToTopic(msg *MessagePayload) error {
+	if msg.Message.Topic == "" {
+		return fmt.Errorf("topic is required")
+	}
+
+	err := f.makeAPICall(msg)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (f *FCMClient) SendToCondition() {
@@ -93,7 +97,7 @@ func (f *FCMClient) WithHTTPClient(httpClient HttpClient) *FCMClient {
 	return f
 }
 
-func (f *FCMClient) makeAPIRequest(msg *MessagePayload) error {
+func (f *FCMClient) makeAPICall(msg *MessagePayload) error {
 	jsonData, err := json.Marshal(msg)
 
 	if err != nil {
