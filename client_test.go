@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	testServiceAccountFile = "testdata/service_account.json"
+	testServiceAccountFile = "testdata/service_test.json"
 )
 
 func TestNew(t *testing.T) {

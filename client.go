@@ -74,17 +74,6 @@ func (f *FCMClient) SendToMultiple() {
 }
 
 func (f *FCMClient) WithCredentialFile(serviceAccountFilePath string) *FCMClient {
-	// get current working directory
-	dir, err := os.Getwd()
-
-	if err != nil {
-		panic("Error getting current working directory")
-	}
-
-	serviceAccountFilePath = fmt.Sprintf("%s/%s", dir, serviceAccountFilePath)
-
-	fmt.Println(serviceAccountFilePath)
-
 	file, err := os.ReadFile(serviceAccountFilePath)
 	if os.IsNotExist(err) {
 		panic("Service account file not found")
