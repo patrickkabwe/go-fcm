@@ -10,7 +10,7 @@ import (
 func main() {
 	// Create a new FCM client.
 	client := fcm.NewClient().
-		WithCredentialFile("path/to/your/credential.json")
+		WithCredentialFile("service_test.json")
 
 	// Create a new message payload.
 	msg := &fcm.MessagePayload{
@@ -19,12 +19,12 @@ func main() {
 				Title: "Hello",
 				Body:  "World",
 			},
-			Topic: "news",
+			Token: "fRo..............THx",
 		},
 	}
 
 	// Send the message to the FCM server.
-	if err := client.SendToTopic(msg); err != nil {
+	if err := client.Send(msg); err != nil {
 		log.Fatalf("failed to send message: %v", err)
 	}
 

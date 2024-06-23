@@ -228,7 +228,6 @@ func (f *FCMClient) handleResponse(res *http.Response) error {
 		log.Println(status, message)
 		return fmt.Errorf(`%s: %s`, status, message)
 	default:
-		log.Println("Message sent successfully")
 		return nil
 	}
 }

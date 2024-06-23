@@ -1,4 +1,6 @@
 github.com/golang-jwt/jwt/v5 v5.2.1 h1:OuVbFODueb089Lh128TAcimifWaLhJwVflnrgM17wHk=
 github.com/golang-jwt/jwt/v5 v5.2.1/go.mod h1:pqrtFR0X4osieyHYxtmOUWsAWrfe1Q5UVIyoH402zdk=
-github.com/patrickkabwe/go-fcm v0.2.0 h1:dqRyYSJwC6Dy3ABQMHdIK2jXqN4Nf2eXaHZ7JCYdYmI=
-github.com/patrickkabwe/go-fcm v0.2.0/go.mod h1:F//w2lQRwN7q6lXblqvrIrbp0S4ZL1MwxnO0ldTZPQs=
+github.com/patrickkabwe/go-fcm v0.2.1 h1:lxK/OZCmBauOAdOKbZ8q9E3Dv3p7C2O+XNpVX2P4RYs=
+github.com/patrickkabwe/go-fcm v0.2.1/go.mod h1:F//w2lQRwN7q6lXblqvrIrbp0S4ZL1MwxnO0ldTZPQs=
+github.com/patrickkabwe/go-fcm v1.0.0 h1:PdMJn06Gl93VZSNyrTo07gcv35KbnSqlhXchGY5cffI=
+github.com/patrickkabwe/go-fcm v1.0.0/go.mod h1:F//w2lQRwN7q6lXblqvrIrbp0S4ZL1MwxnO0ldTZPQs=
