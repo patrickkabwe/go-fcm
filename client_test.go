@@ -2,7 +2,6 @@ package fcm
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,76 +13,359 @@ const (
 )
 
 func TestNew(t *testing.T) {
-	client := NewClient().
-		WithCredentialFile(testServiceAccountFile)
-	if client == nil {
-		t.Error("Expected client to be created")
+	testCases := []struct {
+		name        string
+		serviceFile string
+		expectedErr bool
+	}{
+		{name: "with invalid service file", serviceFile: "invalid.json", expectedErr: true},
+		{name: "with valid service file", serviceFile: testServiceAccountFile, expectedErr: false},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.expectedErr {
+				defer func() {
+					if r := recover(); r != nil {
+						fmt.Println("Recovered from panic", r)
+						if !tc.expectedErr {
+							t.Errorf("Expected no panic but got %v", r)
+						}
+					}
+				}()
+			}
+			client := NewClient().
+				WithCredentialFile(tc.serviceFile)
+
+			if !tc.expectedErr && client.serviceAccount == nil {
+				t.Error("Expected service account to be set")
+			}
+		})
 	}
 }
 
-func TestSend_WithNoMessage(t *testing.T) {
-	client := NewClient()
-	client.WithCredentialFile(testServiceAccountFile).
-		WithHTTPClient(&testHttpClient{
-			DoFunc: func(req *http.Request) (*http.Response, error) {
+func TestSend(t *testing.T) {
+	testCases := []struct {
+		name        string
+		expectedErr bool
+		doFunc      func(req *http.Request) (*http.Response, error)
+		payload     *MessagePayload
+	}{
+		{
+			name: "with invalid payload",
+			doFunc: func(req *http.Request) (*http.Response, error) {
 				return &http.Response{
 					StatusCode: 400,
 					Body:       io.NopCloser(bytes.NewReader([]byte(`{"error": {"status": "INVALID_ARGUMENT", "message":"testing"}}`))),
-				}, errors.New("error")
+				}, nil
 			},
-		})
-	err := client.Send(&MessagePayload{})
-
-	if err == nil {
-		t.Error("Expected error")
-	}
-}
-
-func TestSend_WithMessage(t *testing.T) {
-	client := NewClient().
-		WithCredentialFile(testServiceAccountFile).
-		WithHTTPClient(&testHttpClient{
-			DoFunc: func(req *http.Request) (*http.Response, error) {
+			payload:     &MessagePayload{},
+			expectedErr: true,
+		},
+		{
+			name: "with va ",
+			doFunc: func(req *http.Request) (*http.Response, error) {
 				return &http.Response{
 					StatusCode: 200,
 					Body:       io.NopCloser(bytes.NewReader([]byte(`{}`))),
 				}, nil
 			},
-		})
-
-	err := client.Send(&MessagePayload{
-		Message: Message{
-			Token: "test",
-			Notification: Notification{
-				Title: "Coming Soon!",
-				Body:  "Stay tuned for the latest features and improvements. We are constantly working to improve your experience.",
-			},
-			Data: map[string]string{
-				"key": "value",
-			},
-			APNS: APNSConfig{
-				Headers: map[string]string{
-					"apns-priority": "10",
-				},
-				Payload: APNSPayload{
-					Aps: APNS{
-						Alert: APNAlert{
-							Title:    "Coming Soon!",
-							Subtitle: "This is a subtitle",
-							Body:     "Stay tuned for the latest features and improvements. We are constantly working to improve your experience.",
-						},
-						Badge: 1,
-						Sound: "default",
+			payload: &MessagePayload{
+				Message: Message{
+					Token: "test",
+					Notification: Notification{
+						Title: "Coming Soon!",
+						Body:  "Stay tuned for the latest features and improvements. We are constantly working to improve your experience.",
+					},
+					Data: map[string]string{
+						"key": "value",
 					},
 				},
 			},
+			expectedErr: false,
 		},
-	})
-
-	if err != nil {
-		fmt.Println(err)
-		t.Error("Expected no error")
 	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := NewClient()
+			client.WithCredentialFile(testServiceAccountFile).
+				WithHTTPClient(&testHttpClient{
+					DoFunc: tc.doFunc,
+				})
+			err := client.Send(tc.payload)
+
+			if tc.expectedErr && err == nil {
+				t.Errorf("Expected error but got none")
+			} else if !tc.expectedErr && err != nil {
+				t.Errorf("Expected no error but got %v", err)
+			}
+		})
+	}
+}
+
+func TestSendToTopic(t *testing.T) {
+	testCases := []struct {
+		name        string
+		expectedErr bool
+		doFunc      func(req *http.Request) (*http.Response, error)
+		payload     *MessagePayload
+	}{
+		{
+			name: "with invalid payload",
+			doFunc: func(req *http.Request) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: 400,
+					Body:       io.NopCloser(bytes.NewReader([]byte(`{"error": {"status": "INVALID_ARGUMENT", "message":"testing"}}`))),
+				}, nil
+			},
+			payload:     &MessagePayload{},
+			expectedErr: true,
+		},
+		{
+			name: "with valid payload",
+			doFunc: func(req *http.Request) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: 200,
+					Body:       io.NopCloser(bytes.NewReader([]byte(`{}`))),
+				}, nil
+			},
+			payload: &MessagePayload{
+				Message: Message{
+					Topic: "test",
+					Notification: Notification{
+						Title: "Coming Soon!",
+						Body:  "Stay tuned for the latest features and improvements. We are constantly working to improve your experience.",
+					},
+					Data: map[string]string{
+						"key": "value",
+					},
+				},
+			},
+			expectedErr: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := NewClient()
+			client.WithCredentialFile(testServiceAccountFile).
+				WithHTTPClient(&testHttpClient{
+					DoFunc: tc.doFunc,
+				})
+			err := client.SendToTopic(tc.payload)
+
+			if tc.expectedErr && err == nil {
+				t.Errorf("Expected error but got none")
+			} else if !tc.expectedErr && err != nil {
+				t.Errorf("Expected no error but got %v", err)
+			}
+		})
+	}
+}
+
+func TestSendToCondition(t *testing.T) {
+	testCases := []struct {
+		name        string
+		expectedErr bool
+		doFunc      func(req *http.Request) (*http.Response, error)
+		payload     *MessagePayload
+	}{
+		{
+			name: "with invalid payload",
+			doFunc: func(req *http.Request) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: 400,
+					Body:       io.NopCloser(bytes.NewReader([]byte(`{"error": {"status": "INVALID_ARGUMENT", "message":"testing"}}`))),
+				}, nil
+			},
+			payload:     &MessagePayload{},
+			expectedErr: true,
+		},
+		{
+			name: "with valid payload",
+			doFunc: func(req *http.Request) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: 200,
+					Body:       io.NopCloser(bytes.NewReader([]byte(`{}`))),
+				}, nil
+			},
+			payload: &MessagePayload{
+				Message: Message{
+					Condition: "'test' in topics",
+					Notification: Notification{
+						Title: "Coming Soon!",
+						Body:  "Stay tuned for the latest features and improvements. We are constantly working to improve your experience.",
+					},
+					Data: map[string]string{
+						"key": "value",
+					},
+				},
+			},
+			expectedErr: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := NewClient()
+			client.WithCredentialFile(testServiceAccountFile).
+				WithHTTPClient(&testHttpClient{
+					DoFunc: tc.doFunc,
+				})
+			err := client.SendToCondition(tc.payload)
+
+			if tc.expectedErr && err == nil {
+				t.Errorf("Expected error but got none")
+			} else if !tc.expectedErr && err != nil {
+				t.Errorf("Expected no error but got %v", err)
+			}
+		})
+	}
+}
+
+func TestSendToMultiple(t *testing.T) {
+	testCases := []struct {
+		name        string
+		expectedErr bool
+		doFunc      func(req *http.Request) (*http.Response, error)
+		payload     *MessagePayload
+	}{
+		{
+			name: "with invalid payload",
+			doFunc: func(req *http.Request) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: 400,
+					Body:       io.NopCloser(bytes.NewReader([]byte(`{"error": {"status": "INVALID_ARGUMENT", "message":"testing"}}`))),
+				}, nil
+			},
+			payload:     &MessagePayload{},
+			expectedErr: true,
+		},
+		{
+			name: "with valid payload",
+			doFunc: func(req *http.Request) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: 200,
+					Body:       io.NopCloser(bytes.NewReader([]byte(`{}`))),
+				}, nil
+			},
+			payload: &MessagePayload{
+				Message: Message{
+					Tokens: []string{"test1", "test2"},
+					Notification: Notification{
+						Title: "Coming Soon!",
+						Body:  "Stay tuned for the latest features and improvements. We are constantly working to improve your experience.",
+					},
+					Data: map[string]string{
+						"key": "value",
+					},
+				},
+			},
+			expectedErr: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := NewClient()
+			client.WithCredentialFile(testServiceAccountFile).
+				WithHTTPClient(&testHttpClient{
+					DoFunc: tc.doFunc,
+				})
+			err := client.SendToMultiple(tc.payload)
+
+			if tc.expectedErr && err == nil {
+				t.Errorf("Expected error but got none")
+			} else if !tc.expectedErr && err != nil {
+				t.Errorf("Expected no error but got %v", err)
+			}
+		})
+	}
+}
+
+
+func TestSendAll(t *testing.T) {
+	testCases := []struct {
+		name        string
+		expectedErr bool
+		doFunc      func(req *http.Request) (*http.Response, error)
+		payload     *MessagePayload
+	}{
+		{
+			name: "with invalid payload",
+			doFunc: func(req *http.Request) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: 400,
+					Body:       io.NopCloser(bytes.NewReader([]byte(`{"error": {"status": "INVALID_ARGUMENT", "message":"testing"}}`))),
+				}, nil
+			},
+			payload:     &MessagePayload{},
+			expectedErr: true,
+		},
+		{
+			name: "with token - valid payload",
+			doFunc: func(req *http.Request) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: 200,
+					Body:       io.NopCloser(bytes.NewReader([]byte(`{}`))),
+				}, nil
+			},
+			payload: &MessagePayload{
+				Message: Message{
+					Notification: Notification{
+						Title: "Coming Soon!",
+						Body:  "Stay tuned for the latest features and improvements. We are constantly working to improve your experience.",
+					},
+					Data: map[string]string{
+						"key": "value",
+					},
+					Token: "test",
+				},
+			},
+			expectedErr: false,
+		},
+		{
+			name: "with topic - valid payload",
+			doFunc: func(req *http.Request) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: 200,
+					Body:       io.NopCloser(bytes.NewReader([]byte(`{}`))),
+				}, nil
+			},
+			payload: &MessagePayload{
+				Message: Message{
+					Notification: Notification{
+						Title: "Coming Soon!",
+						Body:  "Stay tuned for the latest features and improvements. We are constantly working to improve your experience.",
+					},
+					Data: map[string]string{
+						"key": "value",
+					},
+					Topic: "test",
+				},
+			},
+			expectedErr: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := NewClient()
+			client.WithCredentialFile(testServiceAccountFile).
+				WithHTTPClient(&testHttpClient{
+					DoFunc: tc.doFunc,
+				})
+			err := client.SendAll(tc.payload)
+
+			if tc.expectedErr && err == nil {
+				t.Errorf("Expected error but got none")
+			} else if !tc.expectedErr && err != nil {
+				t.Errorf("Expected no error but got %v", err)
+			}
+		})
+	}
+
 }
 
 func TestGetAccessToken(t *testing.T) {
