@@ -37,7 +37,24 @@ client := fcm.NewClient()
 Before sending messages, set your service account credentials:
 
 ```go
-client = client.WithCredentialFile("path/to/serviceAccountKey.json")
+client = client.SetCredentialFile("path/to/serviceAccountKey.json")
+```
+OR
+
+```go
+credentials := &fcm.Credentials{
+    ProjectID: "your-project-id",
+    PrivateKeyID: "your-private-key-id",
+    PrivateKey: "yout-private-key",
+    ClientEmail: "your-client-email",
+    ClientID: "your-client-id",
+    AuthURI: "your-auth-uri",
+    TokenURI: "your-token-uri",
+    AuthProviderX509CertURL: "your-auth-provider-x509-cert-url",
+    ClientX509CertURL: "your-client-x509-cert-url",
+}
+
+client = client.SetCredential(credentials)
 ```
 
 ### Sending a Message
@@ -80,7 +97,7 @@ You can customize the HTTP client used for making requests:
 
 ```go
 customClient := &http.Client{Timeout: time.Second * 10}
-client = client.WithHTTPClient(customClient)
+client = client.SetHTTPClient(customClient)
 ```
 
 ## Contributing
