@@ -24,7 +24,7 @@ func TestGenerateGoogleJWT(t *testing.T) {
 		},
 	)
 
-	serviceAccount := &ServiceAccount{
+	serviceAccount := &Credentials{
 		ClientEmail:  "test",
 		TokenURI:     "test",
 		PrivateKeyID: "test",

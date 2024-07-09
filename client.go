@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 )
@@ -14,19 +13,6 @@ const (
 	SCOPES     = "https://www.googleapis.com/auth/firebase.messaging"
 )
 
-// ServiceAccount represents the credentials for a service account.
-type ServiceAccount struct {
-	Type                    string `json:"type,omitempty"`
-	ProjectID               string `json:"project_id,omitempty"`
-	PrivateKeyID            string `json:"private_key_id,omitempty"`
-	PrivateKey              string `json:"private_key,omitempty"`
-	ClientEmail             string `json:"client_email,omitempty"`
-	ClientID                string `json:"client_id,omitempty"`
-	AuthURI                 string `json:"auth_uri,omitempty"`
-	TokenURI                string `json:"token_uri,omitempty"`
-	AuthProviderX509CertURL string `json:"auth_provider_x509_cert_url,omitempty"`
-	ClientX509CertURL       string `json:"client_x509_cert_url,omitempty"`
-}
 
 // HttpClient is an interface that represents an HTTP client.
 type HttpClient interface {
@@ -35,8 +21,8 @@ type HttpClient interface {
 
 // FCMClient represents a client for interacting with the Firebase Cloud Messaging (FCM) service.
 type FCMClient struct {
-	serviceAccount *ServiceAccount
-	httpClient     HttpClient
+	credentials *Credentials
+	httpClient  HttpClient
 }
 
 // NewClient creates a new FCMClient instance with the default HTTP client.
@@ -86,18 +72,18 @@ func (f *FCMClient) SendAll(msg *MessagePayload) error {
 	return f.makeAPICall(msg)
 }
 
-// WithCredentialFile sets the service account credentials for the FCM client
+// SetCredentialFile sets the service account credentials for the FCM client
 // by reading the credentials from the specified file path.
 // It returns the modified FCMClient instance.
 // If the service account file is not found or there is an error parsing the file,
 // it will panic with an appropriate error message.
-func (f *FCMClient) WithCredentialFile(serviceAccountFilePath string) *FCMClient {
+func (f *FCMClient) SetCredentialFile(serviceAccountFilePath string) *FCMClient {
 	file, err := os.ReadFile(serviceAccountFilePath)
 	if os.IsNotExist(err) {
 		panic("Service account file not found")
 	}
 
-	var serviceAccount ServiceAccount
+	var serviceAccount Credentials
 
 	err = json.Unmarshal(file, &serviceAccount)
 
@@ -105,16 +91,29 @@ func (f *FCMClient) WithCredentialFile(serviceAccountFilePath string) *FCMClient
 		panic("Error parsing service account file")
 	}
 
-	f.serviceAccount = &serviceAccount
+	f.credentials = &serviceAccount
 
 	return f
 }
 
-// WithHTTPClient sets the HTTP client to be used by the FCM client.
+// SetCredentials sets the service account credentials for the FCM client.
+func (f *FCMClient) SetCredentials(credentials *Credentials) *FCMClient {
+	err := credentials.Validate()
+
+	if err != nil {
+		panic(err)
+	}
+
+	f.credentials = credentials
+
+	return f
+}
+
+// SetHTTPClient sets the HTTP client to be used by the FCM client.
 // It allows you to customize the HTTP client used for making requests to the FCM server.
 // The provided httpClient should implement the HttpClient interface.
 // Returns the FCM client itself to allow for method chaining.
-func (f *FCMClient) WithHTTPClient(httpClient HttpClient) *FCMClient {
+func (f *FCMClient) SetHTTPClient(httpClient HttpClient) *FCMClient {
 	f.httpClient = httpClient
 	return f
 }
@@ -127,25 +126,22 @@ func (f *FCMClient) makeAPICall(msg *MessagePayload) error {
 	jsonData, err := json.Marshal(msg)
 
 	if err != nil {
-		log.Println("Error marshalling message payload")
 		return err
 	}
 	req, err := http.NewRequest(
 		http.MethodPost,
-		fmt.Sprintf(FCM_V1_URL, f.serviceAccount.ProjectID),
+		fmt.Sprintf(FCM_V1_URL, f.credentials.ProjectID),
 		bytes.NewBuffer(jsonData),
 	)
 
 	if err != nil {
-		log.Println("Error creating API request object", err)
 		return err
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", f.getAccessToken(f.serviceAccount)))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", f.getAccessToken(f.credentials)))
 	res, err := f.httpClient.Do(req)
 
 	if err != nil {
-		log.Println("Error making API request", err)
 		return err
 	}
 
@@ -157,7 +153,7 @@ func (f *FCMClient) makeAPICall(msg *MessagePayload) error {
 // getAccessToken generates and retrieves an access token for the FCM client using the provided service account.
 // It first generates a Google JWT using the given service account, then uses the JWT to obtain an access token
 // from Google. If any error occurs during the process, an empty string is returned.
-func (f *FCMClient) getAccessToken(serviceAccount *ServiceAccount) string {
+func (f *FCMClient) getAccessToken(serviceAccount *Credentials) string {
 	jwt, err := generateGoogleJWT(serviceAccount)
 
 	if err != nil {
@@ -176,7 +172,7 @@ func (f *FCMClient) getAccessToken(serviceAccount *ServiceAccount) string {
 func (f *FCMClient) getAccessTokenFromGoogle(jwt string) (string, error) {
 	req, err := http.NewRequest(
 		http.MethodPost,
-		f.serviceAccount.TokenURI,
+		f.credentials.TokenURI,
 		bytes.NewBuffer([]byte(fmt.Sprintf("grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=%s", jwt))),
 	)
 
@@ -218,14 +214,12 @@ func (f *FCMClient) handleResponse(res *http.Response) error {
 	err := json.NewDecoder(res.Body).Decode(&response)
 
 	if err != nil {
-		log.Println("Error decoding response body", err)
 		return err
 	}
 	switch res.StatusCode != http.StatusOK {
 	case true:
 		status := response["error"].(map[string]interface{})["status"].(string)
 		message := response["error"].(map[string]interface{})["message"].(string)
-		log.Println(status, message)
 		return fmt.Errorf(`%s: %s`, status, message)
 	default:
 		return nil

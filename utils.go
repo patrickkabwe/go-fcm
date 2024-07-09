@@ -6,7 +6,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func generateGoogleJWT(serviceAccount *ServiceAccount) (string, error) {
+func generateGoogleJWT(serviceAccount *Credentials) (string, error) {
 	issuedAt := time.Now().Unix()
 	expires := issuedAt + 3600 // 1 hour
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
