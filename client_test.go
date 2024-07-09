@@ -2,7 +2,6 @@ package fcm
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -27,7 +26,6 @@ func TestNew(t *testing.T) {
 			if tc.expectedErr {
 				defer func() {
 					if r := recover(); r != nil {
-						fmt.Println("Recovered from panic", r)
 						if !tc.expectedErr {
 							t.Errorf("Expected no panic but got %v", r)
 						}
@@ -35,9 +33,9 @@ func TestNew(t *testing.T) {
 				}()
 			}
 			client := NewClient().
-				WithCredentialFile(tc.serviceFile)
+				SetCredentialFile(tc.serviceFile)
 
-			if !tc.expectedErr && client.serviceAccount == nil {
+			if !tc.expectedErr && client.credentials == nil {
 				t.Error("Expected service account to be set")
 			}
 		})
@@ -89,8 +87,8 @@ func TestSend(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			client := NewClient()
-			client.WithCredentialFile(testServiceAccountFile).
-				WithHTTPClient(&testHttpClient{
+			client.SetCredentialFile(testServiceAccountFile).
+				SetHTTPClient(&testHttpClient{
 					DoFunc: tc.doFunc,
 				})
 			err := client.Send(tc.payload)
@@ -149,8 +147,8 @@ func TestSendToTopic(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			client := NewClient()
-			client.WithCredentialFile(testServiceAccountFile).
-				WithHTTPClient(&testHttpClient{
+			client.SetCredentialFile(testServiceAccountFile).
+				SetHTTPClient(&testHttpClient{
 					DoFunc: tc.doFunc,
 				})
 			err := client.SendToTopic(tc.payload)
@@ -209,8 +207,8 @@ func TestSendToCondition(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			client := NewClient()
-			client.WithCredentialFile(testServiceAccountFile).
-				WithHTTPClient(&testHttpClient{
+			client.SetCredentialFile(testServiceAccountFile).
+				SetHTTPClient(&testHttpClient{
 					DoFunc: tc.doFunc,
 				})
 			err := client.SendToCondition(tc.payload)
@@ -269,8 +267,8 @@ func TestSendToMultiple(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			client := NewClient()
-			client.WithCredentialFile(testServiceAccountFile).
-				WithHTTPClient(&testHttpClient{
+			client.SetCredentialFile(testServiceAccountFile).
+				SetHTTPClient(&testHttpClient{
 					DoFunc: tc.doFunc,
 				})
 			err := client.SendToMultiple(tc.payload)
@@ -283,7 +281,6 @@ func TestSendToMultiple(t *testing.T) {
 		})
 	}
 }
-
 
 func TestSendAll(t *testing.T) {
 	testCases := []struct {
@@ -352,8 +349,8 @@ func TestSendAll(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			client := NewClient()
-			client.WithCredentialFile(testServiceAccountFile).
-				WithHTTPClient(&testHttpClient{
+			client.SetCredentialFile(testServiceAccountFile).
+				SetHTTPClient(&testHttpClient{
 					DoFunc: tc.doFunc,
 				})
 			err := client.SendAll(tc.payload)
@@ -371,8 +368,8 @@ func TestSendAll(t *testing.T) {
 func TestGetAccessToken(t *testing.T) {
 	resBody := `{"access_token":"test","expires_in":3600}`
 	client := NewClient().
-		WithCredentialFile(testServiceAccountFile).
-		WithHTTPClient(&testHttpClient{
+		SetCredentialFile(testServiceAccountFile).
+		SetHTTPClient(&testHttpClient{
 			DoFunc: func(req *http.Request) (*http.Response, error) {
 				return &http.Response{
 					StatusCode: 200,
@@ -380,7 +377,7 @@ func TestGetAccessToken(t *testing.T) {
 				}, nil
 			},
 		})
-	token := client.getAccessToken(client.serviceAccount)
+	token := client.getAccessToken(client.credentials)
 
 	if token == "" {
 		t.Error("Expected token to be generated")
